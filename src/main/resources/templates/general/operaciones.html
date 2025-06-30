@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{common/imports :: headImports}">
+</head>
+<body>
+<div th:replace="common/layout :: layout(~{::section})">
+    <section>
+
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center" style="gap: 0.5rem;">
+                <h4><i class="bi bi-gear-fill me-2"></i>Operaciones</h4>
+                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Buscar paquete">
+            </div>
+        </div>
+
+
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Código del Paquete</th>
+                <th>Cantidad</th>
+                <th>Operación</th>
+                <th>Estado</th>
+                <th>Observaciones</th>
+                <th>Operario Responsable</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="detalle : ${ListaDetallePaquetes}">
+                <!-- Código del paquete -->
+                <td th:text="${detalle.paqueteLote.codigo}"></td>
+
+                <!-- Cantidad -->
+                <td th:text="${detalle.paqueteLote.cantidad + ' prendas'}"></td>
+
+                <!-- Operación -->
+                <td th:text="${detalle.operacionPrenda.nombre}"></td>
+
+                <!-- Estado con clases -->
+                <td>
+            <span th:text="${detalle.isTerminado} ? 'Terminado' : 'Pendiente'"
+                  th:classappend="${detalle.isTerminado} ? 'badge bg-success' : 'badge bg-warning text-dark'"></span>
+                </td>
+
+                <!-- Observaciones con tipo descuento incluido -->
+                <td>
+                    <span th:text="${detalle.descripcionObservacion != null and !#strings.isEmpty(detalle.descripcionObservacion) ? detalle.descripcionObservacion : 'Sin observaciones'}"></span>
+                    <br th:if="${detalle.tipoDescuento != null}" />
+                    <small th:if="${detalle.tipoDescuento != null}" th:text="'Descuento: ' + detalle.tipoDescuento.nombre"></small>
+                </td>
+
+
+                <!-- Operario con color rojo si no asignado -->
+                <td>
+                    <span th:if="${detalle.trabajador != null}" th:text="${detalle.trabajador.nombre}"></span>
+                    <span th:if="${detalle.trabajador == null}" class="text-danger fw-bold">No asignado</span>
+                </td>
+
+                <!-- Botón de acción -->
+                <td>
+                    <button class="btn btn-outline-success btn-sm me-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalObservacion"
+                            th:attr="data-id=${detalle.id}"
+                            th:disabled="${detalle.trabajador == null or detalle.isTerminado}" sec:authorize="hasAnyAuthority('Administrador','Supervisor')">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+
+                    <button class="btn btn-sm me-2"
+                            th:classappend="${detalle.trabajador == null or detalle.isTerminado or detalle.isNotificado} ? 'btn-secondary' : 'btn-outline-info'"
+                            id="btn-avisar-[[${detalle.id}]]"
+                            th:data-id="${detalle.id}"
+                            onclick="avisarSupervisorDesdeBoton(this)"
+                            th:disabled="${detalle.trabajador == null or detalle.isTerminado or detalle.isNotificado}"
+                            sec:authorize="hasAuthority('Operario')">
+                        <i class="bi bi-bell"></i> Avisar a supervisor
+                    </button>
+
+
+
+                </td>
+
+            </tr>
+            </tbody>
+        </table>
+
+        <script th:inline="javascript" sec:authorize="hasAuthority('Operario')">
+            function avisarSupervisorDesdeBoton(btn) {
+                const id = btn.dataset.id;
+                avisarSupervisor(id);
+            }
+
+            function avisarSupervisor(detalleId) {
+                fetch('/app/notificaciones/avisar-supervisor/' + detalleId, {
+                    method: 'POST'
+                }).then(res => {
+                    if (res.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Supervisor notificado',
+                            text: 'El supervisor ha sido avisado para revisar la operación.',
+                            confirmButtonColor: '#0d6efd'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se pudo notificar',
+                            text: 'Intenta nuevamente más tarde.',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                }).catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de red',
+                        text: 'No se pudo contactar con el servidor.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                });
+            }
+        </script>
+
+
+
+
+
+
+
+        <div class="d-flex justify-content-end small text-muted">
+            <div>1-10 de 30</div>
+            <div class="ms-3">
+                <i class="bi bi-chevron-left"></i>
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </div>
+
+
+
+        <!-- Modal de observación -->
+        <div class="modal fade" id="modalObservacion" tabindex="-1" aria-labelledby="modalObservacionLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalObservacionLabel">Conformidad de Operación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formObservacion">
+                            <input type="hidden" id="detalleId" name="detalleId">
+
+                            <!-- Select dinámico -->
+                            <div class="mb-3">
+                                <label for="selectObservacion" class="form-label">Tipo de observación</label>
+                                <select class="form-select" id="selectObservacion">
+                                    <option value="" selected>Sin observación</option>
+                                    <option th:each="tipo : ${ListaTiposDescuento}"
+                                            th:value="${tipo.id}"
+                                            th:text="${tipo.nombre}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Textarea -->
+                            <div class="mb-3">
+                                <label for="comentarios" class="form-label">Comentarios</label>
+                                <textarea class="form-control bg-light" id="comentarios" rows="3" style="resize: none;" placeholder="Escribe un comentario..." readonly></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="guardarObservacion()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <script th:inline="javascript" sec:authorize="hasAnyAuthority('Administrador','Supervisor')">
+            // Abrir modal y recibir ID
+            document.querySelectorAll("[data-bs-target='#modalObservacion']").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    document.getElementById("detalleId").value = id;
+                    document.getElementById("formObservacion").reset();
+                    bloquearTextarea(); // Inicializa textarea deshabilitado
+                });
+            });
+
+            // Controla el estado del textarea
+            document.getElementById("selectObservacion").addEventListener("change", bloquearTextarea);
+
+            function bloquearTextarea() {
+                const select = document.getElementById("selectObservacion");
+                const textarea = document.getElementById("comentarios");
+                if (!select.value) {
+                    textarea.setAttribute("readonly", true);
+                    textarea.classList.add("bg-light");
+                    textarea.value = "";
+                } else {
+                    textarea.removeAttribute("readonly");
+                    textarea.classList.remove("bg-light");
+                }
+            }
+
+            function guardarObservacion() {
+                const tipo = document.getElementById("selectObservacion").value;
+                const comentario = document.getElementById("comentarios").value.trim();
+                const id = document.getElementById("detalleId").value;
+
+                if (!id || id === "null") {
+                    Swal.fire("Error", "ID de operación no válido.", "error");
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append("id", id);
+
+                if (tipo) {
+                    formData.append("tipoObservacion", tipo);
+                    formData.append("comentario", comentario);
+                }
+
+                fetch("/app/lote/cambiar-estado-operacion", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Error al actualizar");
+                    return res.text();
+                })
+                .then(() => {
+                    Swal.fire("Actualizado", "La operación ha sido marcada como realizada.", "success")
+                        .then(() => location.reload());
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire("Error", "Ocurrió un error al actualizar.", "error");
+                });
+
+                // Cierra el modal y limpia el formulario
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalObservacion'));
+                modal.hide();
+                document.getElementById("formObservacion").reset();
+                document.getElementById("comentarios").value = "";
+            }
+        </script>
+
+
+
+    </section>
+</div>
+</body>
+</html>

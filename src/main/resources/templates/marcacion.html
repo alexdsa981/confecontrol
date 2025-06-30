@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{common/imports :: headImports}">
+</head>
+<body>
+
+<div class="container mt-4 d-flex align-items-center justify-content-center" style="height: 100vh;">
+    <div class="row w-100">
+        <div class="col-md-6">
+            <div class="border p-3 text-center" style="background-color: #D3D3D3; border-radius: 15px;">
+                <h4 style="font-size:30px;">Hora Actual</h4>
+                <span th:text="${horaActual}" id="horaActual"
+                      style="font-size:30px; font-weight: bold;">Hora Actual</span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group mb-4">
+                <label for="dni" class="form-label fs-3">DNI</label>
+                <input type="text" class="form-control fs-4" id="dni" name="dni" placeholder="Ingrese su DNI" required>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <form method="post" action="/app/marcacion/marcar/llegada" style="width: 48%;">
+                    <input type="hidden" name="dni" id="dniLlegada">
+                    <button type="submit" class="btn btn-success fs-4 w-100 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-box-arrow-in-right me-2 fs-4"></i> Llegada
+                    </button>
+                </form>
+
+                <form method="post" action="/app/marcacion/marcar/salida" id="form-salida" style="width: 48%;">
+                    <input type="hidden" name="dni" id="dniSalida">
+                    <button type="submit" class="btn btn-danger fs-4 w-100 d-flex align-items-center justify-content-center" id="btn-salida">
+                        <i class="bi bi-box-arrow-left me-2 fs-4"></i> Salida
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const dniEntrada = document.getElementById("dni");
+                const dniSalida = document.getElementById("dniSalida");
+                const dniLlegada = document.getElementById("dniLlegada");
+
+                // Sincronizar el campo oculto con el campo visible al hacer clic
+                if (dniEntrada && dniSalida && dniLlegada) {
+                    dniEntrada.addEventListener("input", () => {
+                        dniSalida.value = dniEntrada.value;
+                        dniLlegada.value = dniEntrada.value;
+                    });
+                }
+            });
+        </script>
+
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.has("successNombre")) {
+            const nombre = params.get("successNombre");
+            Swal.fire({
+                icon: 'success',
+                title: '¡Marcación de llegada exitosa!',
+                text: `Bienvenido, ${nombre}`,
+                confirmButtonText: 'OK'
+            });
+        }
+
+        if (params.has("salidaNombre")) {
+            const nombre = params.get("salidaNombre");
+            Swal.fire({
+                icon: 'success',
+                title: '¡Salida registrada!',
+                text: `Hasta luego, ${nombre}`,
+                confirmButtonText: 'OK'
+            });
+        }
+
+        if (params.get("error") === "yaMarcoLlegada") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Ya marcó su llegada',
+                text: 'No se puede registrar más de una llegada por día.',
+                confirmButtonText: 'OK'
+            });
+        }
+
+        if (params.get("error") === "noMarcacionPrev") {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No existe una marcación previa para registrar la salida.',
+                confirmButtonText: 'OK'
+            });
+        }
+
+            if (params.get("error") === "usuarioInactivo") {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Usuario Inactivo',
+                    text: 'Este usuario no puede registrar su llegada, está inactivo. Si cree que esto es un error, contacte con un administrador.',
+                    confirmButtonText: 'OK'
+                });
+            }
+
+        if (params.get("error") === "noExiste") {
+            Swal.fire({
+                icon: 'error',
+                title: 'Usuario no encontrado',
+                text: 'El DNI ingresado no está registrado. Si cree que esto es un error, contacte con un administrador.',
+                confirmButtonText: 'OK'
+            });
+        }
+
+        if (params.get("error") === "error") {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error inesperado',
+                text: 'Ocurrió un problema al registrar la marcación.',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+
+
+</script>
+
+
+<script>
+    function actualizarHora() {
+        const ahora = new Date();
+        const horas = String(ahora.getHours()).padStart(2, '0'); // Obtiene las horas y añade un 0 al inicio si es necesario
+        const minutos = String(ahora.getMinutes()).padStart(2, '0'); // Obtiene los minutos
+        const segundos = String(ahora.getSeconds()).padStart(2, '0'); // Obtiene los segundos
+        document.getElementById('horaActual').textContent = `${horas}:${minutos}:${segundos}`;
+    }
+    setInterval(actualizarHora, 1000);
+</script>
+<script src="/imports/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{common/imports :: headImports}">
+</head>
+<body>
+<div th:replace="common/layout :: layout(~{::section})">
+    <section>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center" style="gap: 0.5rem;">
+                <h4><i class="bi bi-box-seam-fill me-2"></i>LOTES</h4>
+                <input type="text" id="busquedaLote" class="form-control form-control-sm" style="width: 200px;"
+                       placeholder="Buscar...">
+                <form method="get" action="/lotes" class="mb-0">
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" name="verDesactivados" id="verDesactivados"
+                               onchange="this.form.submit()" th:checked="${verDesactivados}">
+                        <label class="form-check-label" for="verDesactivados">Ver lotes desactivados</label>
+                    </div>
+                </form>
+            </div>
+
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoLote">
+                <i class="bi bi-plus"></i> Añadir Lote
+            </button>
+        </div>
+
+
+
+        <table class="table table-striped table-bordered align-middle table-sm">
+            <thead class="table-light">
+            <tr>
+                <th>Código</th>
+                <th>Prenda</th>
+                <th>Cantidad total</th>
+                <th>Paquetes</th>
+                <th>Fecha de creación</th>
+                <th>Supervisor</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(ListaLotes)}">
+                <td colspan="7" class="text-center text-muted">No hay lotes para mostrar.</td>
+            </tr>
+
+            <tr th:each="lote : ${ListaLotes}">
+                <td>
+                    <a th:href="@{/paquetes(idLote=${lote.id})}">
+                        <strong th:text="${lote.codigo}"></strong>
+                    </a>
+                </td>
+                <td th:text="${lote.prenda.nombre}"></td>
+                <td th:text="${lote.cantidadPrenda}"></td>
+                <td>
+                    <div th:each="paq : ${lote.listaPaquetes}">
+                        <strong th:text="${paq.codigo}"></strong> -
+                        <span th:text="${paq.cantidad}"></span> prendas
+                        <span th:text="${paq.isTerminado} ? 'Terminado' : 'Pendiente'"
+                              th:classappend="${paq.isTerminado} ? 'badge bg-success' : 'badge bg-warning text-dark'">
+                </span>
+                        <hr class="my-1">
+                    </div>
+                </td>
+                <td>
+                    <span th:text="${#temporals.format(lote.fechaCreacion, 'dd/MM/yyyy')}"></span>
+                    <span th:text="${#temporals.format(lote.horaCreacion, 'HH:mm')}"></span>
+                </td>
+                <td>
+                    <span th:text="${#lists.isEmpty(lote.listaPaquetes) ? 'Sin supervisor' : lote.listaPaquetes[0].supervisorPaqueteLote?.nombre}"></span>
+                </td>
+                <td class="text-center">
+                    <div th:if="${lote.isTerminado}">
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle-fill me-1"></i> Lote finalizado
+                        </span>
+                    </div>
+                    <div th:if="${!lote.isTerminado}">
+                        <button type="button"
+                                class="btn btn-sm"
+                                th:classappend="${verDesactivados} ? 'btn-success' : 'btn-danger'"
+                                th:onclick="${verDesactivados} ? 'confirmarReactivacion(' + ${lote.id} + ')' : 'confirmarDesactivacion(' + ${lote.id} + ')'"
+                                th:title="${verDesactivados} ? 'Reactivar lote' : 'Desactivar lote'">
+                            <i th:classappend="${verDesactivados} ? 'bi bi-arrow-clockwise' : 'bi bi-x-circle'"></i>
+                        </button>
+                    </div>
+                </td>
+
+            </tr>
+            </tbody>
+        </table>
+
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <script>
+            function confirmarDesactivacion(id) {
+                Swal.fire({
+                    title: '¿Desactivar lote?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonText: 'Sí, desactivar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/app/lote/desactivar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'id=' + id
+                        }).then(response => {
+                            if (response.ok) {
+                                location.reload();
+                            } else {
+                                Swal.fire('Error', 'No se pudo desactivar el lote', 'error');
+                            }
+                        });
+                    }
+                });
+            }
+
+            function confirmarReactivacion(id) {
+                Swal.fire({
+                    title: '¿Reactivar lote?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonText: 'Sí, reactivar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/app/lote/reactivar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'id=' + id
+                        }).then(response => {
+                            if (response.ok) {
+                                location.reload();
+                            } else {
+                                Swal.fire('Error', 'No se pudo reactivar el lote', 'error');
+                            }
+                        });
+                    }
+                });
+            }
+        </script>
+
+
+        <div class="modal fade" id="modalNuevoLote" tabindex="-1" aria-labelledby="modalNuevoLoteLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNuevoLoteLabel">Nuevo Lote de Prendas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formLote">
+                            <!-- Supervisor del paquete -->
+                            <div class="mb-3">
+                                <label for="supervisor" class="form-label">Supervisor</label>
+                                <select class="form-select" id="supervisor" required>
+                                    <option value="">Seleccione un supervisor</option>
+                                    <th:block th:each="supervisor : ${ListaSupervisores}">
+                                        <option th:value="${supervisor.id}" th:text="${supervisor.nombre}"></option>
+                                    </th:block>
+                                </select>
+                            </div>
+
+                            <!-- Cantidad total del lote -->
+                            <div class="mb-3">
+                                <label for="cantidadLote" class="form-label">Cantidad total del lote</label>
+                                <input type="number" class="form-control" id="cantidadLote" required>
+                            </div>
+
+                            <!-- Tipo de prenda -->
+                            <div class="mb-3">
+                                <label for="tipoPrenda" class="form-label">Tipo de prenda</label>
+                                <select class="form-select" id="tipoPrenda" required>
+                                    <option value="">Seleccione una prenda</option>
+                                    <!-- Prendas cargadas desde el modelo -->
+                                    <th:block th:each="prenda : ${ListaPrendas}">
+                                        <option th:value="${prenda.id}" th:text="${prenda.nombre}"></option>
+                                    </th:block>
+                                </select>
+                            </div>
+
+                            <!-- Cantidad por paquete -->
+                            <div class="mb-3">
+                                <label for="cantidadPaquete" class="form-label">Cantidad por paquete</label>
+                                <input type="number" class="form-control" id="cantidadPaquete">
+                            </div>
+
+                            <!-- Botón añadir paquete -->
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarPaquete()">
+                                    Añadir Paquete
+                                </button>
+                            </div>
+
+                            <!-- Tabla de paquetes añadidos -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Cantidad</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="tablaPaquetes"></tbody>
+                                </table>
+                            </div>
+                            <div class="text-end fw-bold me-2">
+                                Prendas restantes: <span id="prendasRestantes">0</span>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" onclick="guardarLote()">Añadir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            let paquetes = [];
+
+            function actualizarRestantes() {
+              const totalLote = parseInt(document.getElementById("cantidadLote").value) || 0;
+              const sumaPaquetes = paquetes.reduce((a, b) => a + b, 0);
+              const restantes = Math.max(totalLote - sumaPaquetes, 0);
+              document.getElementById("prendasRestantes").textContent = restantes;
+            }
+
+            function agregarPaquete() {
+              const cantidad = parseInt(document.getElementById("cantidadPaquete").value);
+              const totalLote = parseInt(document.getElementById("cantidadLote").value) || 0;
+
+              if (isNaN(cantidad) || cantidad <= 0) {
+                Swal.fire("Cantidad inválida", "Ingrese una cantidad mayor a 0.", "warning");
+                return;
+              }
+
+              if (totalLote === 0) {
+                Swal.fire("Falta cantidad del lote", "Debe ingresar la cantidad total del lote primero.", "info");
+                return;
+              }
+
+              const sumaActual = paquetes.reduce((a, b) => a + b, 0);
+              if ((sumaActual + cantidad) > totalLote) {
+                Swal.fire("Exceso de prendas", "Este paquete excede la cantidad total del lote.", "error");
+                return;
+              }
+
+              paquetes.push(cantidad);
+              actualizarTablaPaquetes();
+            }
+
+            function eliminarPaquete(index) {
+              paquetes.splice(index, 1);
+              actualizarTablaPaquetes();
+            }
+
+            function actualizarTablaPaquetes() {
+              const tabla = document.getElementById("tablaPaquetes");
+              tabla.innerHTML = "";
+
+              paquetes.forEach((cantidad, index) => {
+                tabla.innerHTML += `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${cantidad}</td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-danger btn-sm" onclick="eliminarPaquete(${index})">
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              });
+
+              actualizarRestantes();
+            }
+
+            function guardarLote() {
+              const cantidadLote = parseInt(document.getElementById("cantidadLote").value);
+              const tipoPrenda = document.getElementById("tipoPrenda").value;
+              const supervisorId = document.getElementById("supervisor").value;
+              const sumaPaquetes = paquetes.reduce((a, b) => a + b, 0);
+
+              if (!cantidadLote || !tipoPrenda || !supervisorId || paquetes.length === 0) {
+                Swal.fire("Datos incompletos", "Debe llenar todos los campos, seleccionar un supervisor y añadir al menos un paquete.", "warning");
+                return;
+              }
+
+              if (sumaPaquetes < cantidadLote) {
+                Swal.fire("Faltan prendas", "Aún no se completa la cantidad total del lote.", "info");
+                return;
+              }
+
+              Swal.fire({
+                title: '¿Confirmar creación del lote?',
+                text: "¿Desea guardar este lote con los paquetes ingresados?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  enviarLote(cantidadLote, tipoPrenda, supervisorId);
+                }
+              });
+            }
+
+            function enviarLote(cantidadLote, tipoPrenda, supervisorId) {
+              fetch('/app/lote/guardar', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  cantidadLote: cantidadLote,
+                  tipoPrendaId: tipoPrenda,
+                  supervisorId: supervisorId,
+                  paquetes: paquetes
+                })
+              })
+              .then(response => {
+                if (!response.ok) throw new Error("Error al guardar");
+                return response.text();
+              })
+              .then(data => {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Lote añadido',
+                  text: data,
+                  timer: 500,
+                  showConfirmButton: false
+                }).then(() => {
+                  // Recargar página después del cierre del SweetAlert
+                  location.reload();
+                });
+
+                // Limpiar formulario y cerrar modal (opcional si se recarga)
+                paquetes = [];
+                actualizarTablaPaquetes();
+                document.getElementById("formLote").reset();
+                document.getElementById("prendasRestantes").textContent = "0";
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoLote'));
+                modal.hide();
+              })
+              .catch(error => {
+                Swal.fire("Error", "No se pudo guardar el lote. Intente de nuevo.", "error");
+              });
+            }
+
+        </script>
+
+
+    </section>
+</div>
+</body>
+</html>

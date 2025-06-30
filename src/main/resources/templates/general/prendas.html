@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{common/imports :: headImports}">
+</head>
+<body>
+<div th:replace="common/layout :: layout(~{::section})">
+    <section>
+
+
+        <div class="container mt-4">
+            <div class="row">
+                <!-- Prendas: Izquierda -->
+                <div class="col-md-6">
+                    <h4 class="mb-2">
+                        <i class="bi bi-tag"></i>Prendas
+                    </h4>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <input type="text" class="form-control w-50" id="busquedaPrenda" placeholder="Buscar preda...">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearPrenda" sec:authorize="hasAuthority('Administrador')">
+                            <i class="bi bi-plus"></i> Añadir Prenda
+                        </button>
+
+                    </div>
+                    <table class="table table-striped table-bordered align-middle table-sm">
+                        <thead class="table-light">
+                        <tr>
+                            <th></th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Estado</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbody-prendas">
+                        <tr th:each="prenda : ${ListaPrendas}">
+                            <td>
+                                <input type="radio"
+                                       name="prendaSeleccionada"
+                                       th:value="${prenda.id}"
+                                       th:attr="data-id=${prenda.id}"
+                                       th:checked="${prenda.id} == ${selectedId}"
+                                       onchange="cargarDatosPrenda(this)">
+
+                            </td>
+                            <td th:text="${prenda.codigo}">PR001</td>
+                            <td th:text="${prenda.nombre}">Nombre Prenda</td>
+                            <td th:text="${prenda.costoTotal}">100.00</td>
+
+                            <td sec:authorize="hasAuthority('Administrador')">
+                            <span th:classappend="${prenda.isActive} ? 'badge bg-success' : 'badge bg-danger'"
+                                  th:text="${prenda.isActive} ? 'Activo' : 'Inactivo'">Activo</span>
+                            </td>
+                            <td sec:authorize="hasAuthority('Administrador')">
+                                <button class="btn btn-sm btn-outline-primary me-1"
+                                        th:attr="data-id=${prenda.id}, data-nombre=${prenda.nombre}, data-costo=${prenda.costoTotal}"
+                                        onclick="editarPrenda(this)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <a th:href="@{/app/prendas/desactivar/{id}(id=${prenda.id})}"
+                                   th:if="${prenda.isActive}"
+                                   class="btn btn-sm btn-outline-danger me-1">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+
+                                <a th:href="@{/app/prendas/activar/{id}(id=${prenda.id})}"
+                                   th:unless="${prenda.isActive}"
+                                   class="btn btn-sm btn-outline-success me-1">
+                                    <i class="bi bi-check-circle"></i>
+                                </a>
+
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <!-- Operaciones de Prenda: Derecha -->
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between mb-2">
+
+                        <h4 class="mb-2">
+                            <i class="bi bi-display"></i>Operaciones
+                        </h4>
+
+                        <button class="btn btn-success" onclick="abrirModalOperacion()" sec:authorize="hasAuthority('Administrador')">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    <table id="tabla-operaciones" class="table table-striped table-bordered align-middle table-sm">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Operación</th>
+                            <th>Precio Normal</th>
+                            <th>Precio Horas Extra</th>
+                            <th>Precio Feriado</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Estado</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+
+                        </tr>
+                        <!-- Más filas dinámicas aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla Piezas: Inferior derecha -->
+            <div class="row mt-4">
+                <div class="col-md-6"></div> <!-- Espacio vacío a la izquierda -->
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h4 class="mb-2">
+                            <i class="bi bi-puzzle me-1 fs-4"></i>Piezas
+                        </h4>
+
+                        <button class="btn btn-success me-2" onclick="abrirModalPieza()" sec:authorize="hasAuthority('Administrador')">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    <table id="tabla-piezas" class="table table-striped table-bordered align-middle table-sm">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cantidad</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Estado</th>
+                            <th sec:authorize="hasAuthority('Administrador')">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="modalCrearPrenda" tabindex="-1" aria-labelledby="modalCrearPrendaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form action="/app/prendas/nuevo" method="post">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalCrearPrendaLabel">Nueva Prenda</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label">Nombre de la Prenda</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="costoTotal" class="form-label">Costo Total (S/)</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="costoTotal"
+                                       name="costoTotal" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Crear</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Editar Prenda -->
+        <div class="modal fade" id="modalEditarPrenda" tabindex="-1" aria-labelledby="modalEditarPrendaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form action="/app/prendas/editar" method="post">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEditarPrendaLabel">Editar Prenda</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="id" id="editar-id">
+                            <div class="mb-3">
+                                <label for="editar-nombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" name="nombre" id="editar-nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editar-costo" class="form-label">Costo Total</label>
+                                <input type="number" step="0.01" class="form-control" name="costoTotal"
+                                       id="editar-costo" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="modalCrearPieza" tabindex="-1" aria-labelledby="modalCrearPiezaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="/app/prendas/pieza/nuevo">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nueva Pieza</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="prendaId" id="prendaIdPieza">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" required min="1">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEditarPieza" tabindex="-1" aria-labelledby="modalEditarPiezaLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="/app/prendas/pieza/editar">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Pieza</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="editPiezaId">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" id="editPiezaNombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" name="cantidad" id="editPiezaCantidad" class="form-control" required min="1">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalCrearOperacion" tabindex="-1" aria-labelledby="modalCrearOperacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="/app/prendas/operacion/nuevo">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nueva Operación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="prendaId" id="prendaIdOperacion">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Normal</label>
+                            <input type="number" name="precioNormal" step="0.01" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Horas Extra</label>
+                            <input type="number" name="precioHorasExtra" step="0.01" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Feriado</label>
+                            <input type="number" name="precioFeriado" step="0.01" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal fade" id="modalEditarOperacion" tabindex="-1" aria-labelledby="modalEditarOperacionLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="/app/prendas/operacion/editar">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Operación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="editOperacionId">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" id="editOperacionNombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Normal</label>
+                            <input type="number" step="0.01" name="precioNormal" id="editOperacionPrecioNormal" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Horas Extra</label>
+                            <input type="number" step="0.01" name="precioHorasExtra" id="editOperacionPrecioHorasExtra" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Precio Feriado</label>
+                            <input type="number" step="0.01" name="precioFeriado" id="editOperacionPrecioFeriado" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <script>
+            function obtenerIdPrendaSeleccionada() {
+                const radio = document.querySelector('input[name="prendaSeleccionada"]:checked');
+                return radio ? radio.value : null;
+            }
+
+            function abrirModalPieza() {
+                const id = obtenerIdPrendaSeleccionada();
+                if (!id) {
+                    Swal.fire("Selecciona una prenda primero");
+                    return;
+                }
+                document.getElementById("prendaIdPieza").value = id;
+                new bootstrap.Modal(document.getElementById("modalCrearPieza")).show();
+            }
+
+            function abrirModalOperacion() {
+                const id = obtenerIdPrendaSeleccionada();
+                if (!id) {
+                    Swal.fire("Selecciona una prenda primero");
+                    return;
+                }
+                document.getElementById("prendaIdOperacion").value = id;
+                new bootstrap.Modal(document.getElementById("modalCrearOperacion")).show();
+            }
+        </script>
+
+
+
+
+
+
+        <script>
+            function editarPrenda(button) {
+                const id = button.getAttribute("data-id");
+                const nombre = button.getAttribute("data-nombre");
+                const costo = button.getAttribute("data-costo");
+
+                document.getElementById("editar-id").value = id;
+                document.getElementById("editar-nombre").value = nombre;
+                document.getElementById("editar-costo").value = costo;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalEditarPrenda'));
+                modal.show();
+            }
+        </script>
+
+        <script th:inline="javascript">
+            var isAdmin = [[${isAdmin}]];
+        </script>
+
+        <script>
+            function cargarDatosPrenda(radio) {
+                const prendaId = radio.getAttribute("data-id");
+
+                // Cargar operaciones
+                fetch(`/app/prendas/${prendaId}/operaciones`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.querySelector("#tabla-operaciones tbody");
+                        tbody.innerHTML = "";
+
+                        data.forEach(op => {
+                            let fila = `
+                                <tr>
+                                    <td>${op.nombre}</td>
+                                    <td>S/ ${op.precioNormal.toFixed(2)}</td>
+                                    <td>S/ ${op.precioHorasExtra.toFixed(2)}</td>
+                                    <td>S/ ${op.precioFeriado.toFixed(2)}</td>`;
+
+                            if (isAdmin) {
+                                const accionBtn = op.isActive
+                                    ? `<a href="/app/prendas/operacion/desactivar/${op.id}" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i></a>`
+                                    : `<a href="/app/prendas/operacion/activar/${op.id}" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle"></i></a>`;
+
+                                fila += `
+                                    <td><span class="badge ${op.isActive ? 'bg-success' : 'bg-danger'}">${op.isActive ? 'Activo' : 'Inactivo'}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick='editarOperacion(${JSON.stringify(op)})'>
+                                          <i class="bi bi-pencil"></i>
+                                        </button>
+                                        ${accionBtn}
+                                    </td>`;
+                            }
+
+                            fila += `</tr>`;
+                            tbody.innerHTML += fila;
+                        });
+                    });
+
+                // Cargar piezas
+                fetch(`/app/prendas/${prendaId}/piezas`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.querySelector("#tabla-piezas tbody");
+                        tbody.innerHTML = "";
+
+                        data.forEach(pieza => {
+                            let fila = `
+                                <tr>
+                                    <td>${pieza.nombre}</td>
+                                    <td>${pieza.cantidad}</td>`;
+
+                            if (isAdmin) {
+                                const accionBtn = pieza.isActive
+                                    ? `<a href="/app/prendas/pieza/desactivar/${pieza.id}" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i></a>`
+                                    : `<a href="/app/prendas/pieza/activar/${pieza.id}" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle"></i></a>`;
+
+                                fila += `
+                                    <td><span class="badge ${pieza.isActive ? 'bg-success' : 'bg-danger'}">${pieza.isActive ? 'Activo' : 'Inactivo'}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick='editarPieza(${JSON.stringify(pieza)})'>
+                                          <i class="bi bi-pencil"></i>
+                                        </button>
+                                        ${accionBtn}
+                                    </td>`;
+                            }
+
+                            fila += `</tr>`;
+                            tbody.innerHTML += fila;
+                        });
+                    });
+            }
+
+
+        </script>
+
+        <script>
+            function editarPieza(pieza) {
+              document.getElementById('editPiezaId').value = pieza.id;
+              document.getElementById('editPiezaNombre').value = pieza.nombre;
+              document.getElementById('editPiezaCantidad').value = pieza.cantidad;
+
+              const modal = new bootstrap.Modal(document.getElementById('modalEditarPieza'));
+              modal.show();
+            }
+
+            function editarOperacion(op) {
+              document.getElementById('editOperacionId').value = op.id;
+              document.getElementById('editOperacionNombre').value = op.nombre;
+              document.getElementById('editOperacionPrecioNormal').value = op.precioNormal;
+              document.getElementById('editOperacionPrecioHorasExtra').value = op.precioHorasExtra;
+              document.getElementById('editOperacionPrecioFeriado').value = op.precioFeriado;
+
+              const modal = new bootstrap.Modal(document.getElementById('modalEditarOperacion'));
+              modal.show();
+            }
+
+
+        </script>
+
+
+
+        <script>
+            document.getElementById('busquedaPrenda').addEventListener('input', function () {
+                const filtro = this.value.toLowerCase();
+                const tbody = document.getElementById('tbody-prendas');
+
+                if (tbody) {
+                    const filas = tbody.querySelectorAll('tr');
+                    filas.forEach(fila => {
+                        const textoFila = fila.innerText.toLowerCase();
+                        fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+                    });
+                }
+            });
+        </script>
+
+
+
+        <script>
+            function cargarDatosInicial() {
+                const seleccionado = document.querySelector('input[name="prendaSeleccionada"]:checked');
+                if (seleccionado) {
+                    cargarDatosPrenda(seleccionado);
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", cargarDatosInicial);
+        </script>
+
+    </section>
+</div>
+</body>
+</html>
