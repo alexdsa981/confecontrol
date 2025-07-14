@@ -26,6 +26,7 @@ public class TipoDescuento {
     @Column(nullable = false)
     private String nombre;
     private String descripcion;
+    private String monto;
 
 
 

@@ -15,7 +15,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -41,6 +43,10 @@ public class LoteController {
     TipoDescuentoRepository tipoDescuentoRepository;
     @Autowired
     NotificacionesService notificacionesService;
+    @Autowired
+    DetalleTrabajoRepository detalleTrabajoRepository;
+    @Autowired
+    DetalleDescuentoRepository detalleDescuentoRepository;
 
     public void listarLotes(Model model, Boolean verDesactivados) {
         List<Lote> lotes = (verDesactivados != null && verDesactivados)
@@ -252,8 +258,8 @@ public class LoteController {
             return ResponseEntity.notFound().build();
         }
 
-        DetallePaqueteLote detalle = opt.get();
-        detalle.setIsTerminado(true);
+        DetallePaqueteLote detallePL = opt.get();
+        detallePL.setIsTerminado(true);
 
         // Agregar observación si aplica
         if (tipoObservacion != null) {
@@ -266,13 +272,49 @@ public class LoteController {
             if (comentario != null && !comentario.isBlank()) {
                 observacion += ": " + comentario;
             }
-            detalle.setDescripcionObservacion(observacion);
+            detallePL.setDescripcionObservacion(observacion);
+
+            TipoDescuento tipodescuento = tipo.get();
+            DetalleDescuentos detalleDescuento = new DetalleDescuentos();
+            if (tipodescuento.getNombre().equalsIgnoreCase("Prenda dañada")) {
+                //descuento del costo total de la prenda
+                detalleDescuento.setMonto(detallePL.getOperacionPrenda().getPrenda().getCostoTotal());
+            }
+
+            if (tipodescuento.getNombre().equalsIgnoreCase("Pérdida de materiales")) {
+                detalleDescuento.setMonto(detallePL.getOperacionPrenda().getPrenda().getCostoTotal());
+            }
+
+            if (tipodescuento.getNombre().equalsIgnoreCase("Error en costura")) {
+                detalleDescuento.setMonto(detallePL.getOperacionPrenda().getPrenda().getCostoTotal());
+            }
+            detalleDescuento.setLote(detallePL.getPaqueteLote().getLote());
+            detalleDescuento.setFecha(LocalDateTime.now());
+            detalleDescuento.setUsuario(detallePL.getTrabajador());
+            detalleDescuento.setTipoDescuento(tipodescuento);
+            detalleDescuentoRepository.save(detalleDescuento);
         }
 
-        detallePaqueteLoteRepository.save(detalle);
+        detallePaqueteLoteRepository.save(detallePL);
+
+        DetalleTrabajo detalleTrabajo = new DetalleTrabajo();
+        detalleTrabajo.setLote(detallePL.getPaqueteLote().getLote());
+        detalleTrabajo.setUsuario(detallePL.getTrabajador());
+        detalleTrabajo.setDetallePaqueteLote(detallePL);
+        detalleTrabajo.setFecha(LocalDateTime.now());
+
+        BigDecimal precioTrabajo = detallePL.getOperacionPrenda().getPrecioNormal();
+        Integer cantidad = detallePL.getPaqueteLote().getCantidad();
+
+        BigDecimal monto = precioTrabajo.multiply(BigDecimal.valueOf(cantidad));
+
+        detalleTrabajo.setMonto(monto);
+
+        detalleTrabajoRepository.save(detalleTrabajo);
+
 
         // Verificar si todos los detalles del paquete están terminados
-        PaqueteLote paquete = detalle.getPaqueteLote();
+        PaqueteLote paquete = detallePL.getPaqueteLote();
         boolean todosTerminados = paquete.getListaDetallePaqueteLote().stream()
                 .allMatch(DetallePaqueteLote::getIsTerminado);
 

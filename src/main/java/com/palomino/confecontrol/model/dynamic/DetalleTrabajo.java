@@ -1,5 +1,6 @@
 package com.palomino.confecontrol.model.dynamic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.palomino.confecontrol.model.fixed.OperacionPrenda;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,20 +19,17 @@ public class DetalleTrabajo {
     @Column(name = "id_detalle_trabajo")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-
     private LocalDateTime fecha;
-
-
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "lote_id")
+    private Lote lote;
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
-
     @ManyToOne
     @JoinColumn(name = "detalle_paquete_lote_id")
     private DetallePaqueteLote detallePaqueteLote;
-
-
     private BigDecimal monto;
 
 }

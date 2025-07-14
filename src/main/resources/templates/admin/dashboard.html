@@ -6,160 +6,74 @@
 <div th:replace="common/layout :: layout(~{::section})">
     <section>
         <script src="/imports/chart.min.js"></script>
-        <div class="container mt-4">
-            <h2 class="mb-4 text-center">Dashboard de Operarios</h2>
-
-            <!-- Gráfico principal: Producción total -->
-            <div class="row">
-                <div class="col-12 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Producción Total por Operario</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartPrincipal"></canvas>
-                            </div>
-                        </div>
-                    </div>
+        <div class="row">
+            <div class="col">
+                <div class="card text-bg-light p-3">
+                    <div class="fw-semibold">Asistencias Hoy</div>
+                    <h2 th:text="${asistenciasHoy}">0</h2>
                 </div>
             </div>
-
-            <!-- Segunda fila -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Operarios que más dinero producen</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartProduccion"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Prendas producidas</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartPrendas"></canvas>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col">
+                <div class="card text-bg-light p-3">
+                    <div class="fw-semibold">Tardanzas Hoy</div>
+                    <h2 th:text="${tardanzasHoy}">0</h2>
                 </div>
             </div>
-
-            <!-- Tercera fila -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Operarios con más tardanzas</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartTardanzas"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Faltas por operario</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartFaltas"></canvas>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col">
+                <div class="card text-bg-light p-3">
+                    <div class="fw-semibold">Producción Hoy</div>
+                    <h2 th:text="'S/ ' + ${produccionHoy}">S/0.00</h2>
                 </div>
             </div>
-
-            <!-- Cuarta fila -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title text-center">Operarios con más descuentos</h5>
-                            <div style="position: relative; height: 200px;">
-                                <canvas id="chartDescuentos"></canvas>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col">
+                <div class="card text-bg-light p-3">
+                    <div class="fw-semibold">Total Pagado Semana</div>
+                    <h2 th:text="'S/ ' + ${totalPagado}">S/0.00</h2>
                 </div>
             </div>
         </div>
 
+        <div class="mt-5 d-flex justify-content-center">
+            <div style="max-width: 900px; width: 100%;">
+                <canvas id="graficoProduccion" height="400"></canvas>
+            </div>
+        </div>
 
-        <!-- Chart.js -->
-        <script>
-            const labels = ["Luis", "Ana", "Carlos", "Marta", "Pedro"];
+        <script th:inline="javascript">
+            const ctx = document.getElementById('graficoProduccion');
 
-            const data = {
-                tardanzas: [8, 5, 12, 3, 7],
-                descuentos: [120, 90, 300, 50, 100],
-                produccion: [1500, 1800, 1200, 2000, 1700],
-                horas: [160, 175, 150, 180, 170],
-                prendas: [600, 750, 500, 800, 720],
-                faltas: [2, 1, 4, 0, 3],
-                bonos: [300, 400, 200, 450, 350]
-            };
-
-            // Reutilizar opciones
-            const baseOptions = {
-                responsive: true,
-                maintainAspectRatio: false, // importante cuando controlas la altura por CSS
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            };
-
-
-
-            const createBarChart = (id, label, dataSet, bgColor) => {
-                new Chart(document.getElementById(id), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: label,
-                            data: dataSet,
-                            backgroundColor: bgColor,
-                            borderRadius: 8
-                        }]
-                    },
-                    options: baseOptions
-                });
-            };
-
-            createBarChart('chartPrincipal', 'Producción total (S/.)', data.produccion, 'rgba(54, 162, 235, 0.6)');
-            createBarChart('chartTardanzas', 'Tardanzas', data.tardanzas, 'rgba(255, 99, 132, 0.6)');
-            createBarChart('chartDescuentos', 'Descuentos', data.descuentos, 'rgba(255, 159, 64, 0.6)');
-            createBarChart('chartProduccion', 'Producción (S/.)', data.produccion, 'rgba(75, 192, 192, 0.6)');
-            createBarChart('chartPrendas', 'Prendas producidas', data.prendas, 'rgba(255, 205, 86, 0.6)');
-            createBarChart('chartFaltas', 'Faltas', data.faltas, 'rgba(201, 203, 207, 0.6)');
-
-            // Pie chart para participación
-            new Chart(document.getElementById('chartParticipacion'), {
-                type: 'pie',
+            new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: [[${diasProduccion}]],
                     datasets: [{
-                        data: data.produccion,
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(255, 205, 86, 0.6)',
-                            'rgba(201, 203, 207, 0.6)',
-                            'rgba(54, 162, 235, 0.6)'
-                        ]
+                        label: 'Producción semanal',
+                        data: [[${montosProduccion}]],
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderRadius: 4
                     }]
                 },
                 options: {
-                    responsive: true
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => 'S/ ' + value
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
                 }
             });
         </script>
+
+
     </section>
 
 

@@ -27,6 +27,11 @@ public class WebController {
     LoteController loteController;
     @Autowired
     DescuentosController descuentosController;
+    @Autowired
+    PagosController pagosController;
+    @Autowired
+    DashboardController dashboardController;
+
 
     @GetMapping("/")
     public String redirectToInicio() {
@@ -131,34 +136,100 @@ public class WebController {
 
     @GetMapping("admin/dashboard")
     public String redirigePaginaDashboard(Model model) {
+        dashboardController.mostrarDashboard(model);
         model.addAttribute("SubTitulo", "Dashboard");
         model.addAttribute("Titulo", "ConFeControl | Dashboard");
         return "admin/dashboard";
     }
 
+
+
+
+
     @GetMapping("admin/pagos")
     public String redirigePaginaPagos(Model model) {
         model.addAttribute("SubTitulo", "Gestión de Pagos");
         model.addAttribute("Titulo", "ConFeControl | Pagos");
+
+        pagosController.listarDetallePagosPorUsuario(model, null);
+
         return "admin/pagos";
     }
+
+    @GetMapping("admin/detalle/pago")
+    public String redirigePaginaDetallePagos(@RequestParam("id") Long idUsuario, Model model) {
+        model.addAttribute("SubTitulo", "Detalle de Pago");
+        model.addAttribute("Titulo", "ConFeControl | Pagos");
+
+        pagosController.listarDetallePagosPorUsuario(model, idUsuario); // 👈 solo para ese usuario
+
+        return "admin/detallepago";
+    }
+
+
+
+
     @GetMapping("admin/pagos/historial")
     public String redirigePaginaPagosHistorial(Model model) {
         model.addAttribute("SubTitulo", "Historial de Pagos");
         model.addAttribute("Titulo", "ConFeControl | Historial de Pagos");
+
+        // Llama al método que carga los pagos
+        pagosController.listarHistorialPago(model, null);
+
         return "admin/pagos-historial";
     }
+
+
+
+
+
 
     @GetMapping("operario/pagos")
     public String redirigePaginaPagosOperario(Model model) {
         model.addAttribute("SubTitulo", "Pago de la Semana");
         model.addAttribute("Titulo", "ConFeControl | Pago Semanal");
+
+        Long idUsuario = usuarioService.getIDdeUsuarioLogeado();
+        pagosController.listarDetallePagosPorUsuario(model, idUsuario);
+
         return "admin/pagos";
     }
+
+    @GetMapping("operario/pagos/detalle")
+    public String redirigePaginaDetallePagosOperario(Model model) {
+        model.addAttribute("SubTitulo", "Detalle de Pago");
+        model.addAttribute("Titulo", "ConFeControl | Detalle de Pago");
+
+        Long idUsuario = usuarioService.getIDdeUsuarioLogeado();
+        pagosController.listarDetallePagosPorUsuario(model, idUsuario);
+
+        return "admin/detallepago";
+    }
+
     @GetMapping("operario/pagos/historial")
     public String redirigePaginaPagosHistorialOperario(Model model) {
         model.addAttribute("SubTitulo", "Historial de Pagos");
         model.addAttribute("Titulo", "ConFeControl | Historial de Pagos");
+
+        Long idUsuario = usuarioService.getIDdeUsuarioLogeado();
+        pagosController.listarHistorialPago(model, idUsuario);
+
         return "admin/pagos-historial";
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

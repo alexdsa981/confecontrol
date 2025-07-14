@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{common/imports :: headImports}">
+</head>
+<body>
+<div th:replace="common/layout :: layout(~{::section})">
+    <section>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center" style="gap: 0.5rem;">
+                <h4><i class="bi bi-cash-coin me-2"></i>Pagos</h4>
+                <input type="text" class="form-control form-control-sm" style="width: 200px;" placeholder="Buscar operario" sec:authorize="hasAuthority('Administrador')">
+            </div>
+        </div>
+
+        <h5 class="mt-4">Detalle de operaciones por lote</h5>
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Operario</th>
+                <th>Lote</th>
+                <th>Operaciones realizadas</th>
+                <th>Descuentos aplicados</th>
+            </tr>
+            </thead>
+            <tbody>
+            <th:block th:each="pago : ${listaPagosUsuarios}">
+                <tr th:each="resumen : ${pago.resumenPorLote}">
+                    <!-- Operario -->
+                    <td th:text="${pago.usuario.nombre}">Operario</td>
+
+                    <!-- Lote -->
+                    <td th:text="${resumen.lote.codigo}">LOTE-XXXX</td>
+
+                    <!-- Operaciones -->
+                    <td>
+                        <div th:each="trabajo : ${resumen.trabajos}">
+                            <div class="mb-2 border-bottom pb-1">
+                                <div>
+                                    <strong th:text="${trabajo.detallePaqueteLote.operacionPrenda.nombre}">Operación</strong>
+                                </div>
+                                <div>
+                                    Cantidad:
+                                    <span th:text="${trabajo.detallePaqueteLote.paqueteLote.cantidad}">0</span> —
+                                    Precio unitario:
+                                    <span th:text="'S/ ' + ${trabajo.detallePaqueteLote.operacionPrenda.precioNormal}">S/0.00</span> —
+                                    Total:
+                                    <span class="float-end fw-semibold" th:text="'S/ ' + ${trabajo.monto}">S/0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Descuentos -->
+                    <td>
+                        <div th:each="desc : ${resumen.descuentos}">
+                            <div class="mb-2 border-bottom pb-1">
+                                <div>
+                                    <strong th:text="${desc.tipoDescuento.nombre}">Tipo</strong>
+                                </div>
+                                <div>
+                                    Monto:
+                                    <span class="float-end fw-semibold" th:text="'S/ ' + ${desc.monto}">S/0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+
+
+
+
+        <div class="d-flex justify-content-end small text-muted">
+            <div>1-10 de 30</div>
+            <div class="ms-3">
+                <i class="bi bi-chevron-left"></i>
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

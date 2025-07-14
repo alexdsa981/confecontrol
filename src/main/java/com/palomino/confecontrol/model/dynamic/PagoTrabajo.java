@@ -22,9 +22,12 @@ public class PagoTrabajo {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private Usuario usuario;
+    @JoinColumn(name = "usuario_trabajador_id")
+    private Usuario usuarioTrabajador;
 
+    @ManyToOne
+    @JoinColumn(name = "usuario_admin_id")
+    private Usuario usuarioAdmin;
 
     private LocalDate fechaInicio;
 
@@ -42,7 +45,5 @@ public class PagoTrabajo {
 
 
     private LocalDateTime fecha;
-
-
 
 }

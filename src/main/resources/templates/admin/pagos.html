@@ -20,55 +20,189 @@
                 <th>Operario</th>
                 <th>Lote</th>
                 <th>Prenda</th>
-                <th>Resumen de operaciones</th>
-                <th>Descuentos</th>
-                <th>Total a pagar</th>
+                <th>Subtotal operaciones</th>
+                <th>Subtotal descuentos</th>
+                <th>Total a pagar por lote</th>
+                <th>Pago Neto Total</th>
                 <th>Estado</th>
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>
-                    <div>Del 11-05-2025</div>
-                    <div>Hasta 11-05-2025</div>
-                </td>
-                <td>Alexander Saldaña</td>
-                <td>
-                    <div>LOTE-110525-0001</div>
-                    <hr class="my-2">
-                    <div>LOTE-110525-0002</div>
-                </td>
-                <td>
-                    <div>Polo básico</div>
-                    <hr class="my-2">
-                    <div>Blusa básica</div>
-                </td>
-                <td>
-                    <div>Pegado de cuello <span class="float-end">S/50</span></div>
-                    <div>Cerrado de costado <span class="float-end">S/25</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/75</span></div>
-                    <hr class="my-2">
-                    <div>Pegado de cuello <span class="float-end">S/50</span></div>
-                    <div>Cerrado de costado <span class="float-end">S/25</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/75</span></div>
-                </td>
-                <td>
-                    <div>Tardanza <span class="float-end">S/10</span></div>
-                    <div>Costura <span class="float-end">S/15</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/25</span></div>
-                    <hr class="my-2">
-                    <div>Tardanza <span class="float-end">S/10</span></div>
-                    <div>Costura <span class="float-end">S/15</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/25</span></div>
-                </td>
-                <td><strong>S/25</strong></td>
-                <td>
-                    <span class="badge bg-warning text-dark">Pendiente</span>
-                    <i class="bi bi-check-circle text-success ms-2" sec:authorize="hasAuthority('Administrador')"></i>
-                </td>
-            </tr>
+            <th:block th:each="pago : ${listaPagosUsuarios}" th:if="${pago.usuario.rolUsuario.nombre == 'Operario'}">
+                <tr>
+                    <!-- Fecha -->
+                    <td>
+                        <div th:text="'Del ' + ${#temporals.format(fechaInicio, 'dd-MM-yyyy')}"></div>
+                        <div th:text="'Hasta ' + ${#temporals.format(fechaFin, 'dd-MM-yyyy')}"></div>
+                    </td>
+
+                    <!-- Usuario -->
+                    <td>
+                        <a th:href="@{/admin/detalle/pago(id=${pago.usuario.id})}"
+                           th:text="${pago.usuario.nombre}"
+                           class="text-decoration-none text-primary fw-semibold">
+                        </a>
+                    </td>
+
+                    <!-- Lotes -->
+                    <td>
+                        <div th:each="resumen, iter : ${pago.resumenPorLote}">
+                            <div th:text="${resumen.lote.codigo}">LOTE-XXXX</div>
+                            <hr class="my-2" th:if="${!iter.last}">
+                        </div>
+                    </td>
+
+                    <!-- Prendas -->
+                    <td>
+                        <div th:each="resumen, iter : ${pago.resumenPorLote}">
+                            <div th:text="${resumen.lote.prenda.nombre}">Prenda</div>
+                            <hr class="my-2" th:if="${!iter.last}">
+                        </div>
+                    </td>
+
+                    <!-- Subtotal operaciones -->
+                    <td>
+                        <div th:each="resumen, iter : ${pago.resumenPorLote}">
+                            <div class="subtotal-pago"
+                                 th:attr="data-subtotal-pago=${resumen.subtotalPagos}"
+                                 th:text="'S/ ' + ${resumen.subtotalPagos}">S/00
+                            </div>
+                            <hr class="my-2" th:if="${!iter.last}">
+                        </div>
+                    </td>
+
+                    <!-- Subtotal descuentos -->
+                    <td>
+                        <div th:each="resumen, iter : ${pago.resumenPorLote}">
+                            <div class="subtotal-descuento"
+                                 th:attr="data-subtotal-descuento=${resumen.subtotalDescuentos}"
+                                 th:text="'S/ ' + ${resumen.subtotalDescuentos}">S/00
+                            </div>
+                            <hr class="my-2" th:if="${!iter.last}">
+                        </div>
+                    </td>
+
+                    <!-- Total a pagar por lote -->
+                    <td>
+                        <div th:each="resumen, iter : ${pago.resumenPorLote}">
+                            <div class="total-lote"
+                                 th:attr="data-total=${resumen.subtotalPagos.subtract(resumen.subtotalDescuentos)}"
+                                 th:text="'S/ ' + ${resumen.subtotalPagos.subtract(resumen.subtotalDescuentos)}">S/00
+                            </div>
+                            <hr class="my-2" th:if="${!iter.last}">
+                        </div>
+                    </td>
+
+                    <!-- Pago Neto Total -->
+                    <td>
+                        <strong class="pago-neto-total">S/00</strong>
+                    </td>
+
+                    <!-- Estado -->
+                    <!-- Estado -->
+                    <td>
+                        <th:block th:if="${pago.pagado}">
+                            <span class="badge bg-success">Pagado</span>
+                        </th:block>
+                        <th:block th:unless="${pago.pagado}">
+                            <button class="btn btn-outline-success btn-sm btn-registrar-pago"
+                                    th:attr="
+                                    data-idusuario=${pago.usuario.id},
+                                    data-fechainicio=${#temporals.format(fechaInicio, 'yyyy-MM-dd')},
+                                    data-fechafin=${#temporals.format(fechaFin, 'yyyy-MM-dd')},
+                                    data-subtotalpago='0',
+                                    data-subtotaldescuento='0',
+                                    data-totalpago='0'
+                                ">
+                                Marcar como pagado
+                            </button>
+                        </th:block>
+                    </td>
+
+                </tr>
+            </th:block>
             </tbody>
         </table>
+
+
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const filas = document.querySelectorAll('tbody tr');
+
+                filas.forEach(fila => {
+                    let subtotalPago = 0;
+                    let subtotalDescuento = 0;
+                    let totalNeto = 0;
+
+                    fila.querySelectorAll('.subtotal-pago').forEach(div => {
+                        subtotalPago += parseFloat(div.dataset.subtotalPago || '0');
+                    });
+
+                    fila.querySelectorAll('.subtotal-descuento').forEach(div => {
+                        subtotalDescuento += parseFloat(div.dataset.subtotalDescuento || '0');
+                    });
+
+                    fila.querySelectorAll('.total-lote').forEach(div => {
+                        totalNeto += parseFloat(div.dataset.total || '0');
+                    });
+
+                    const campoTotal = fila.querySelector('.pago-neto-total');
+                    if (campoTotal) {
+                        campoTotal.textContent = 'S/ ' + totalNeto.toFixed(2);
+                    }
+
+                    // Asignar a botón los valores calculados
+                    const btn = fila.querySelector('.btn-registrar-pago');
+                    if (btn) {
+                        btn.dataset.subtotalpago = subtotalPago.toFixed(2);
+                        btn.dataset.subtotaldescuento = subtotalDescuento.toFixed(2);
+                        btn.dataset.totalpago = totalNeto.toFixed(2);
+                    }
+                });
+            });
+        </script>
+
+
+        <script>
+            document.querySelectorAll('.btn-registrar-pago').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const data = {
+                        idUsuario: btn.dataset.idusuario,
+                        fechaInicio: btn.dataset.fechainicio,
+                        fechaFin: btn.dataset.fechafin,
+                        subtotalPago: btn.dataset.subtotalpago,
+                        subtotalDescuento: btn.dataset.subtotaldescuento,
+                        totalPago: btn.dataset.totalpago,
+                    };
+
+                    fetch('/app/pagos/admin/registrar-pago', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams(data)
+                    })
+                    .then(res => res.text())
+                    .then(msg => {
+                        Swal.fire("Éxito", msg, "success");
+
+                        // Reemplazar el botón por un badge "Pagado"
+                        const td = btn.parentElement;
+                        td.innerHTML = '<span class="badge bg-success">Pagado</span>';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire("Error", "No se pudo registrar el pago", "error");
+                    });
+                });
+            });
+        </script>
+
+
+
+
+
 
         <div class="d-flex justify-content-end small text-muted">
             <div>1-10 de 30</div>
@@ -77,8 +211,6 @@
                 <i class="bi bi-chevron-right"></i>
             </div>
         </div>
-
-
     </section>
 </div>
 </body>

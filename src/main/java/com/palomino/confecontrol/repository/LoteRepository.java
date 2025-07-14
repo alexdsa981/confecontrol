@@ -18,4 +18,16 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     List<Lote> findByIsActiveFalse();
     List<Lote> findByIsActiveTrueAndIsTerminadoFalse();
 
+    @Query("""
+    SELECT DISTINCT l FROM Lote l
+    JOIN l.listaPaquetes p
+    JOIN p.listaDetallePaqueteLote d
+    WHERE d.trabajador.id = :idUsuario
+    AND l.fechaCreacion BETWEEN :inicio AND :fin
+""")
+    List<Lote> findLotesTrabajadosPorUsuario(@Param("idUsuario") Long idUsuario,
+                                             @Param("inicio") LocalDate inicio,
+                                             @Param("fin") LocalDate fin);
+
+
 }

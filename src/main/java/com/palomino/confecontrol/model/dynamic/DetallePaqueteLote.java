@@ -1,5 +1,6 @@
 package com.palomino.confecontrol.model.dynamic;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.palomino.confecontrol.model.fixed.OperacionPrenda;
 import com.palomino.confecontrol.model.fixed.Prenda;
 import com.palomino.confecontrol.model.fixed.TipoDescuento;
@@ -30,6 +31,7 @@ public class DetallePaqueteLote {
     @JoinColumn(name = "usuario_id")
     private Usuario trabajador;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "paquete_lote_id")
     private PaqueteLote paqueteLote;

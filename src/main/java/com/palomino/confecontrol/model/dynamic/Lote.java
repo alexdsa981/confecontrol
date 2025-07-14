@@ -21,29 +21,24 @@ public class Lote {
     @Column(name = "id_lote")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String codigo;
     private Integer cantidadPrenda;
-
-
     @ManyToOne
     @JoinColumn(name = "prenda_id")
     private Prenda prenda;
-
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario creadorLote;
-
-    @JsonIgnore
     @OneToMany(mappedBy = "lote")
     private List<PaqueteLote> listaPaquetes;
-
+    @OneToMany(mappedBy = "lote")
+    private List<DetalleDescuentos> listaDetalleDescuentos;
+    @OneToMany(mappedBy = "lote")
+    private List<DetalleTrabajo> listaDetalleTrabajo;
     private Boolean isTerminado;
-
     private Boolean isActive;
     private LocalDate fechaCreacion;
     private LocalTime horaCreacion;
     private LocalDate fechaFin;
     private LocalTime horaFin;
-
 }

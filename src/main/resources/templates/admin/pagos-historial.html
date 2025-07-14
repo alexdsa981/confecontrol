@@ -16,47 +16,30 @@
         <table class="table table-bordered table-sm align-middle">
             <thead class="table-light">
             <tr>
-                <th>Fecha</th>
                 <th>Operario</th>
-                <th>Lote</th>
-                <th>Prenda</th>
-                <th>Resumen de operaciones</th>
-                <th>Descuentos</th>
-                <th>Total a pagar</th>
-                <th>Estado</th>
+                <th>Administrador</th>
+                <th>Desde</th>
+                <th>Hasta</th>
+                <th>Subtotal</th>
+                <th>Descuento</th>
+                <th>Total Pagado</th>
+                <th>Fecha Registro</th>
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>
-                    <div>11-05-2025</div>
-                </td>
-                <td>Alexander Saldaña</td>
-                <td>
-                    <div>LOTE-11052025-0001</div>
-                </td>
-                <td>
-                    <div>Polo básico</div>
-
-                </td>
-                <td>
-                    <div>Pegado de cuello <span class="float-end">S/50</span></div>
-                    <div>Cerrado de costado <span class="float-end">S/25</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/75</span></div>
-                </td>
-                <td>
-                    <div>Tardanza <span class="float-end">S/10</span></div>
-                    <div>Costura <span class="float-end">S/15</span></div>
-                    <div class="fw-semibold border-top pt-1 mt-1">Subtotal <span class="float-end">S/25</span></div>
-                </td>
-                <td><strong>S/25</strong></td>
-                <td>
-                    <span class="badge bg-warning text-dark">Pendiente</span>
-                    <i class="bi bi-check-circle text-success ms-2" sec:authorize="hasAuthority('Administrador')"></i>
-                </td>
+            <tr th:each="pago : ${historialPagos}">
+                <td th:text="${pago.usuarioTrabajador.nombre}">Operario</td>
+                <td th:text="${pago.usuarioAdmin.nombre}">Admin</td>
+                <td th:text="${pago.fechaInicio}">Inicio</td>
+                <td th:text="${pago.fechaFin}">Fin</td>
+                <td th:text="'S/ ' + ${pago.subtotalPago}">S/0.00</td>
+                <td th:text="'S/ ' + ${pago.subtotalDescuento}">S/0.00</td>
+                <td th:text="'S/ ' + ${pago.totalAPagar}">S/0.00</td>
+                <td th:text="${#temporals.format(pago.fecha, 'dd-MM-yyyy HH:mm')}">Fecha</td>
             </tr>
             </tbody>
         </table>
+
 
         <div class="d-flex justify-content-end small text-muted">
             <div>1-10 de 30</div>

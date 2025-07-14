@@ -26,6 +26,7 @@
                                 <th>Hora de Entrada</th>
                                 <th>Estado Salida</th>
                                 <th>Hora de Salida</th>
+                                <th>Producción del Día</th> <!-- ✅ NUEVA COLUMNA -->
                             </tr>
                             </thead>
                             <tbody>
@@ -33,11 +34,10 @@
                                 <td th:text="${marcacion.usuario.nombre}">Juan Pérez</td>
                                 <td th:text="${marcacion.usuario.dni}">12345678</td>
                                 <td>
-                                        <span th:class="${marcacion.estadoLlegada == null ? 'badge bg-secondary' : (marcacion.estadoLlegada ? 'badge bg-success' : 'badge bg-danger')}"
-                                              th:text="${marcacion.estadoLlegada == null ? 'Aún no marca' : (marcacion.estadoLlegada ? 'A tiempo' : 'Tardanza')}">
-                                            Aún no marca
-                                        </span>
-
+                                    <span th:class="${marcacion.estadoLlegada == null ? 'badge bg-secondary' : (marcacion.estadoLlegada ? 'badge bg-success' : 'badge bg-danger')}"
+                                          th:text="${marcacion.estadoLlegada == null ? 'Aún no marca' : (marcacion.estadoLlegada ? 'A tiempo' : 'Tardanza')}">
+                                        Aún no marca
+                                    </span>
                                 </td>
                                 <td th:text="${marcacion.horaEntradaFormateada}">2025-05-12 08:00</td>
                                 <td>
@@ -45,12 +45,13 @@
                                           th:text="${marcacion.estadoSalida == null ? 'Aún no marca' : (marcacion.estadoSalida ? 'A tiempo' : 'Temprano')}">
                                         Aún no marca
                                     </span>
-
                                 </td>
                                 <td th:text="${marcacion.horaSalidaFormateada}">2025-05-12 16:30</td>
+                                <td th:text="'S/ ' + ${marcacion.produccionDelDia}">S/ 0.00</td> <!-- ✅ NUEVA CELDA -->
                             </tr>
                             </tbody>
                         </table>
+
                     </div>
                 </div>
 

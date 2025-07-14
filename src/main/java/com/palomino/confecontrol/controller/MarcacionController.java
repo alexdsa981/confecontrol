@@ -1,8 +1,10 @@
 package com.palomino.confecontrol.controller;
 
+import com.palomino.confecontrol.model.dynamic.DetalleTrabajo;
 import com.palomino.confecontrol.model.dynamic.Marcacion;
 import com.palomino.confecontrol.model.dynamic.Usuario;
 import com.palomino.confecontrol.model.fixed.Prenda;
+import com.palomino.confecontrol.repository.DetalleTrabajoRepository;
 import com.palomino.confecontrol.repository.MarcacionRepository;
 import com.palomino.confecontrol.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/app/marcacion")
@@ -28,11 +31,34 @@ public class MarcacionController {
     @Autowired
     MarcacionRepository marcacionRepository;
     @Autowired
+    DetalleTrabajoRepository detalleTrabajoRepository;
+    @Autowired
     UsuarioRepository usuarioRepository;
 
 
     public Model listarMarcaciones(Model model) {
-        model.addAttribute("ListaAsistencia", marcacionRepository.findAll());
+        List<Marcacion> lista = marcacionRepository.findAll();
+
+        for (Marcacion marcacion : lista) {
+            LocalDate fecha = marcacion.getFecha();
+            Long idUsuario = marcacion.getUsuario().getId();
+
+            // Obtener trabajos del usuario en esa fecha
+            List<DetalleTrabajo> trabajosDelDia = detalleTrabajoRepository.findAll().stream()
+                    .filter(dt -> dt.getUsuario().getId().equals(idUsuario)
+                            && dt.getFecha().toLocalDate().isEqual(fecha))
+                    .collect(Collectors.toList());
+
+            // Sumar monto total
+            BigDecimal total = trabajosDelDia.stream()
+                    .map(DetalleTrabajo::getMonto)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Asignar producción del día
+            marcacion.setProduccionDelDia(total);
+        }
+
+        model.addAttribute("ListaAsistencia", lista);
         return model;
     }
 

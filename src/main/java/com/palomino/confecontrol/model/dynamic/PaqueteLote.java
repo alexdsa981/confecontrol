@@ -30,13 +30,12 @@ public class PaqueteLote {
     @JoinColumn(name = "usuario_id")
     private Usuario supervisorPaqueteLote;
 
-
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "lote_id")
     private Lote lote;
 
 
-    @JsonIgnore
     @OneToMany(mappedBy = "paqueteLote")
     private List<DetallePaqueteLote> listaDetallePaqueteLote;
 
